@@ -449,8 +449,8 @@ static void writeNativeHaltLog(const std::string& dump) {
     const char* targets[] = {
         "/sdcard/NFSU2/halt_log.txt",
         "/sdcard/nfsu2/halt_log.txt",
-        "/storage/emulated/0/NFSU2/halt_log.txt",
-        "/storage/emulated/0/nfsu2/halt_log.txt"
+        "/storage/emulated/11/NFSU2/halt_log.txt",
+        "/storage/emulated/11/nfsu2/halt_log.txt"
     };
     for (const char* target : targets) {
         FILE* fp = std::fopen(target, "a");

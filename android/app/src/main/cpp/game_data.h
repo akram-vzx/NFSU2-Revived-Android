@@ -27,9 +27,9 @@ inline std::string resolveGameRoot() {
         userUpper,
         userLower,
         "/sdcard/NFSU2",
-        "/storage/emulated/0/NFSU2",
+        "/storage/emulated/11/NFSU2",
         "/sdcard/nfsu2",
-        "/storage/emulated/0/nfsu2"
+        "/storage/emulated/11/nfsu2"
     };
     for (const char* dir : candidates) {
         std::string s1 = std::string(dir) + "/SPEED2.EXE";

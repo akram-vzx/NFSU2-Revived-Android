@@ -1,0 +1,40 @@
+[1mdiff --git a/android/app/src/main/cpp/roam/roam_compat.c b/android/app/src/main/cpp/roam/roam_compat.c[m
+[1mindex 75ba704..86cc597 100644[m
+[1m--- a/android/app/src/main/cpp/roam/roam_compat.c[m
+[1m+++ b/android/app/src/main/cpp/roam/roam_compat.c[m
+[36m@@ -13,7 +13,7 @@[m
+  *   G4  Speedometer JNI    — provide the missing[m
+  *                            nativeSpeedometerPosition symbol; re-apply[m
+  *                            minimap offset each frame from NFSU2_MINIMAP.[m
+[31m- *   G7  Multi-user storage — rewrite /storage/emulated/0/... opens from[m
+[32m+[m[32m *   G7  Multi-user storage — rewrite /storage/emulated/11/... opens from[m
+  *                            the game library to the current Android user.[m
+  *[m
+  * G5 (garage hook recursion) is fixed in roam_android.c itself.[m
+[36m@@ -260,7 +260,7 @@[m [mstatic int patch_got(void *base, const char *name, void *hook, void **orig_out)[m
+ }[m
+ [m
+ /* -------------------------------------------------------------------------- */[m
+[31m-/* G7: rewrite /storage/emulated/0 to the current Android multi-user path      */[m
+[32m+[m[32m/* G7: rewrite /storage/emulated/11 to the current Android multi-user path      */[m
+ /* -------------------------------------------------------------------------- */[m
+ [m
+ static int android_user_id(void) {[m
+[36m@@ -270,7 +270,7 @@[m [mstatic int android_user_id(void) {[m
+ static const char *rewrite_emulated0(const char *path, char *buf, size_t buflen) {[m
+     int uid = android_user_id();[m
+     if (uid == 0 || !path) return path;[m
+[31m-    const char *prefix = "/storage/emulated/0";[m
+[32m+[m[32m    const char *prefix = "/storage/emulated/11";[m
+     size_t n = strlen(prefix);[m
+     if (strncmp(path, prefix, n) != 0) return path;[m
+     if (path[n] != '\0' && path[n] != '/') return path;[m
+[36m@@ -351,7 +351,7 @@[m [mstatic void install_path_hooks(void *base) {[m
+         LOGI("primary Android user; no storage-path rewrite");[m
+         return;[m
+     }[m
+[31m-    LOGI("Android user %d: rewriting /storage/emulated/0 for the game library", android_user_id());[m
+[32m+[m[32m    LOGI("Android user %d: rewriting /storage/emulated/11 for the game library", android_user_id());[m
+     patch_got(base, "access",  (void *)hook_access,  (void **)&s_orig_access);[m
+     patch_got(base, "fopen",   (void *)hook_fopen,   (void **)&s_orig_fopen);[m
+     patch_got(base, "stat",    (void *)hook_stat,    (void **)&s_orig_stat);[m
