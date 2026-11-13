@@ -431,6 +431,11 @@ public final class GameActivity extends NativeActivity {
         Intent launch = getIntent();
         float distVal = 450.0f;
         try {
+            try {
+                String root = LauncherActivity.gameRoot().getAbsolutePath();
+                android.system.Os.setenv("NFSU2_DATA_DIR", root, true);
+                android.util.Log.i("NFSU2", "NFSU2_DATA_DIR=" + root);
+            } catch (Throwable t) { android.util.Log.w("NFSU2", "setenv NFSU2_DATA_DIR failed", t); }
             String menuScale = GameOptions.get(this, GameOptions.MENU_BUTTON_SIZE);
             if ("auto".equals(menuScale) || "100".equals(menuScale)) android.system.Os.setenv("NFSU2_MENU_SCALE", "1.0", true);
             else if ("125".equals(menuScale)) android.system.Os.setenv("NFSU2_MENU_SCALE", "1.25", true);

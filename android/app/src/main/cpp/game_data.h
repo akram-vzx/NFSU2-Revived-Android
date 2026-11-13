@@ -1,4 +1,5 @@
 #pragma once
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -14,7 +15,17 @@ inline std::string resolveGameRoot() {
     if (env && *env && access(env, R_OK) == 0) {
         return env;
     }
+    if (env && *env)
+        __android_log_print(ANDROID_LOG_WARN, "NFSU2", "NFSU2_DATA_DIR=%s not accessible (errno %d)", env, errno);
+    const unsigned userId = unsigned(getuid() / 100000);
+    char userUpper[64], userLower[64];
+    std::snprintf(userUpper, sizeof userUpper, "/storage/emulated/%u/NFSU2", userId);
+    std::snprintf(userLower, sizeof userLower, "/storage/emulated/%u/nfsu2", userId);
+    __android_log_print(ANDROID_LOG_INFO, "NFSU2", "resolveGameRoot: env=%s uid=%u user=%u",
+                        env ? env : "(null)", unsigned(getuid()), userId);
     const char* candidates[] = {
+        userUpper,
+        userLower,
         "/sdcard/NFSU2",
         "/storage/emulated/0/NFSU2",
         "/sdcard/nfsu2",
