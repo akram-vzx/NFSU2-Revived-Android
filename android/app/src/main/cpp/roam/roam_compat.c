@@ -13,7 +13,7 @@
  *   G4  Speedometer JNI    — provide the missing
  *                            nativeSpeedometerPosition symbol; re-apply
  *                            minimap offset each frame from NFSU2_MINIMAP.
- *   G7  Multi-user storage — rewrite /storage/emulated/11/... opens from
+ *   G7  Multi-user storage — rewrite /storage/emulated/0/... opens from
  *                            the game library to the current Android user.
  *
  * G5 (garage hook recursion) is fixed in roam_android.c itself.
@@ -260,7 +260,7 @@ static int patch_got(void *base, const char *name, void *hook, void **orig_out) 
 }
 
 /* -------------------------------------------------------------------------- */
-/* G7: rewrite /storage/emulated/11 to the current Android multi-user path      */
+/* G7: rewrite /storage/emulated/0 to the current Android multi-user path      */
 /* -------------------------------------------------------------------------- */
 
 static int android_user_id(void) {
@@ -270,7 +270,7 @@ static int android_user_id(void) {
 static const char *rewrite_emulated0(const char *path, char *buf, size_t buflen) {
     int uid = android_user_id();
     if (uid == 0 || !path) return path;
-    const char *prefix = "/storage/emulated/11";
+    const char *prefix = "/storage/emulated/0";
     size_t n = strlen(prefix);
     if (strncmp(path, prefix, n) != 0) return path;
     if (path[n] != '\0' && path[n] != '/') return path;
@@ -351,7 +351,7 @@ static void install_path_hooks(void *base) {
         LOGI("primary Android user; no storage-path rewrite");
         return;
     }
-    LOGI("Android user %d: rewriting /storage/emulated/11 for the game library", android_user_id());
+    LOGI("Android user %d: rewriting /storage/emulated/0 for the game library", android_user_id());
     patch_got(base, "access",  (void *)hook_access,  (void **)&s_orig_access);
     patch_got(base, "fopen",   (void *)hook_fopen,   (void **)&s_orig_fopen);
     patch_got(base, "stat",    (void *)hook_stat,    (void **)&s_orig_stat);
@@ -370,7 +370,7 @@ typedef void (*unresolved_fn)(const char *kind, uint32_t va, uint32_t from);
 static unresolved_fn s_orig_unresolved;
 
 static void hook_recomp_unresolved(const char *kind, uint32_t va, uint32_t from) {
-    if (from == 0x005c5c00u || va == 0u) {
+    if (from == 0x005c5c00u || from == 0x00725520u || va == 0u || va == 0x005c5c00u) {
         static uint32_t last_from, log_count;
         if (last_from != from || ++log_count <= 10) {
             last_from = from;
