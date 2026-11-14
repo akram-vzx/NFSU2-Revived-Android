@@ -287,6 +287,9 @@ static int        (*s_orig_open)(const char *, int, ...);
 static int        (*s_orig_open_2)(const char *, int);
 static int        (*s_orig_openat)(int, const char *, int, ...);
 static DIR       *(*s_orig_opendir)(const char *);
+static int        (*s_orig_fstatat)(int, const char *, struct stat *, int);
+static ssize_t    (*s_orig_readlink)(const char *, char *, size_t);
+static char       *(*s_orig_realpath)(const char *, char *);
 
 static int hook_access(const char *path, int mode) {
     char buf[1024];
@@ -346,6 +349,38 @@ static DIR *hook_opendir(const char *path) {
     return s_orig_opendir ? s_orig_opendir(p) : opendir(p);
 }
 
+static int hook_fstatat(int dirfd, const char *path, struct stat *st, int flags) {
+    char buf[1024];
+    const char *p = rewrite_emulated0(path, buf, sizeof buf);
+    return s_orig_fstatat ? s_orig_fstatat(dirfd, p, st, flags) : fstatat(dirfd, p, st, flags);
+}
+static ssize_t hook_readlink(const char *path, char *out, size_t outlen) {
+    char buf[1024];
+    const char *p = rewrite_emulated0(path, buf, sizeof buf);
+    return s_orig_readlink ? s_orig_readlink(p, out, outlen) : readlink(p, out, outlen);
+}
+static char *hook_realpath(const char *path, char *resolved) {
+    char buf[1024];
+    const char *p = rewrite_emulated0(path, buf, sizeof buf);
+    return s_orig_realpath ? s_orig_realpath(p, resolved) : realpath(p, resolved);
+}
+
+struct find_lib_ctx { const char *needle; void *base; };
+static int find_lib_cb(struct dl_phdr_info *info, size_t size, void *data) {
+    (void)size;
+    struct find_lib_ctx *ctx = (struct find_lib_ctx *)data;
+    if (info->dlpi_name && strstr(info->dlpi_name, ctx->needle)) {
+        ctx->base = (void *)info->dlpi_addr;
+        return 1;
+    }
+    return 0;
+}
+static void *find_loaded_lib_base(const char *so_name) {
+    struct find_lib_ctx ctx = { so_name, NULL };
+    dl_iterate_phdr(find_lib_cb, &ctx);
+    return ctx.base;
+}
+
 static void install_path_hooks(void *base) {
     if (android_user_id() == 0) {
         LOGI("primary Android user; no storage-path rewrite");
@@ -360,6 +395,9 @@ static void install_path_hooks(void *base) {
     patch_got(base, "__open_2",(void *)hook_open_2,  (void **)&s_orig_open_2);
     patch_got(base, "openat",  (void *)hook_openat,  (void **)&s_orig_openat);
     patch_got(base, "opendir", (void *)hook_opendir, (void **)&s_orig_opendir);
+    patch_got(base, "fstatat",  (void *)hook_fstatat,  (void **)&s_orig_fstatat);
+    patch_got(base, "readlink", (void *)hook_readlink, (void **)&s_orig_readlink);
+    patch_got(base, "realpath", (void *)hook_realpath, (void **)&s_orig_realpath);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -982,6 +1020,15 @@ void roam_compat_install(void) {
     LOGI("installing compat hooks (game base %p, android user %d)", base, android_user_id());
     install_icall_hook();
     install_path_hooks(base);
+    {
+        void *cxx_base = find_loaded_lib_base("libc++_shared.so");
+        if (cxx_base && cxx_base != base) {
+            LOGI("found libc++_shared.so at %p; extending G7 rewrite to its GOT too", cxx_base);
+            install_path_hooks(cxx_base);
+        } else if (!cxx_base) {
+            LOGI("libc++_shared.so not loaded as a separate module (static STL?)");
+        }
+    }
     install_aaudio_hooks(base);
     install_cs_deadlock_hooks(base);
     install_bleach_hook();
