@@ -1,6 +1,7 @@
 <div align="center">
 
 # Need for Speed Underground 2 — Revived (Android)
+# THIS FORK IS ONLY FOR USER 11 (STORAGE/EMULATED/11)
 
 ### Static Recompilation of SPEED2.EXE into Native C (x86 & ARM64)
 
